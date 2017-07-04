@@ -155,7 +155,8 @@ export function revertPatch(target: IStateTreeNode, patch: IJsonPatch | IJsonPat
 }
 
 export interface IPatchRecorder {
-    patches: IJsonPatch[]
+    patches: ReadonlyArray<IJsonPatch>
+    cleanPatches: ReadonlyArray<IJsonPatch>
     stop(): any
     replay(target: IStateTreeNode): any
     undo(): void
@@ -169,6 +170,8 @@ export interface IPatchRecorder {
  * export interface IPatchRecorder {
  *      // the recorded patches
  *      patches: IJsonPatch[]
+ *      // the same set of recorded patches, but without undo information, making them smaller and compliant with json-patch spec
+ *      cleanPatches: IJSonPatch[]
  *      // stop recording patches
  *      stop(): any
  *      // apply all the recorded patches on the given object
@@ -186,6 +189,9 @@ export interface IPatchRecorder {
 export function recordPatches(subject: IStateTreeNode): IPatchRecorder {
     let recorder = {
         patches: [] as IJsonPatch[],
+        get cleanPatches() {
+            return this.patches.map(stripPatch)
+        },
         stop() {
             disposer()
         },
@@ -227,7 +233,7 @@ export function applyAction(
 }
 
 export interface IActionRecorder {
-    actions: ISerializedActionCall[]
+    actions: ReadonlyArray<ISerializedActionCall>
     stop(): any
     replay(target: IStateTreeNode): any
 }
@@ -543,7 +549,7 @@ import {
 } from "./action"
 import { runInAction, IObservableArray, ObservableMap } from "mobx"
 import { Node, getStateTreeNode, IStateTreeNode, isStateTreeNode } from "./node"
-import { IJsonPatch, splitJsonPath, invertPatch } from "./json-patch"
+import { IJsonPatch, splitJsonPath, invertPatch, stripPatch } from "./json-patch"
 import { IDisposer, fail, asArray } from "../utils"
 import { ISnapshottable, IType } from "../types/type"
 import { isType } from "../types/type-flags"
